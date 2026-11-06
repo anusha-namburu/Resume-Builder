@@ -1,0 +1,14 @@
+{
+  "name": "ai-resume-builder",
+  "version": "1.0.0",
+  "description": "AI-Powered Resume Builder with automated dual-server runner",
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"cd backend && python run.py\" \"cd frontend && npm run dev\"",
+    "start": "concurrently -n \"backend,frontend\" -c \"cyan,magenta\" \"cd backend && python run.py\" \"cd frontend && npm run dev\"",
+    "backend": "cd backend && python run.py",
+    "frontend": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
