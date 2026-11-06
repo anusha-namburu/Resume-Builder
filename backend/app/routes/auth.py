@@ -22,7 +22,11 @@ def register():
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        return jsonify({'success': False, 'message': 'An account with this email already exists'}), 409
+        return jsonify({
+            'success': False,
+            'message': 'You already have an account with this email. Please sign in instead.',
+            'already_exists': True
+        }), 409
 
     try:
         new_user = User(
@@ -55,8 +59,18 @@ def login():
         return jsonify({'success': False, 'message': 'Email and password are required'}), 400
 
     user = User.query.filter_by(email=email).first()
-    if not user or not user.check_password(password):
-        return jsonify({'success': False, 'message': 'Invalid email or password'}), 401
+    if not user:
+        return jsonify({
+            'success': False,
+            'message': 'No account found with this email. Please create an account first.',
+            'not_found': True
+        }), 404
+
+    if not user.check_password(password):
+        return jsonify({
+            'success': False,
+            'message': 'Incorrect password. Please try again or reset your password.'
+        }), 401
 
     token = generate_token(user.id)
     return jsonify({

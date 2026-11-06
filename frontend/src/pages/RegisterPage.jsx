@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, Loader2, FileText, ArrowRight, AlertCircle, Briefcase } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Loader2, FileText, ArrowRight, AlertCircle, Briefcase, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const RegisterPage = () => {
@@ -14,10 +14,12 @@ export const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isExistingAccount, setIsExistingAccount] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsExistingAccount(false);
 
     if (!name || !email || !password) {
       setError('Please provide your name, email, and password.');
@@ -36,9 +38,20 @@ export const RegisterPage = () => {
         navigate('/dashboard');
       } else {
         setError(res.message || 'Registration failed.');
+        if (res.already_exists) {
+          setIsExistingAccount(true);
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Try a different email.');
+      const msg = err.response?.data?.message;
+      if (err.response?.status === 409 || msg?.toLowerCase().includes('already')) {
+        setError('You already have an account with this email address.');
+        setIsExistingAccount(true);
+      } else if (!err.response) {
+        setError('Cannot connect to backend server. Please make sure the Flask backend is running on http://127.0.0.1:5000 (cd backend; python run.py).');
+      } else {
+        setError(msg || 'Registration failed. Please check your details.');
+      }
     } finally {
       setLoading(false);
     }
@@ -66,9 +79,24 @@ export const RegisterPage = () => {
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-8 px-6 sm:px-8 rounded-2xl shadow-xl border border-slate-200/80">
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-              <AlertCircle size={15} className="shrink-0" />
-              <span>{error}</span>
+            <div className={`mb-4 p-3.5 rounded-xl border text-xs flex flex-col gap-2 ${
+              isExistingAccount 
+                ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                : 'bg-rose-50 border-rose-200 text-rose-700'
+            }`}>
+              <div className="flex items-start gap-2">
+                <AlertCircle size={16} className={`shrink-0 mt-0.5 ${isExistingAccount ? 'text-amber-600' : 'text-rose-600'}`} />
+                <span className="font-semibold leading-relaxed">{error}</span>
+              </div>
+              {isExistingAccount && (
+                <Link
+                  to="/login"
+                  className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white font-bold text-xs hover:bg-amber-700 transition-colors shadow-2xs mt-1"
+                >
+                  <LogIn size={13} />
+                  <span>Sign In to Your Account</span>
+                </Link>
+              )}
             </div>
           )}
 
@@ -167,7 +195,7 @@ export const RegisterPage = () => {
           </form>
 
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-500">
               Already have an account?{' '}
               <Link to="/login" className="font-bold text-blue-600 hover:text-blue-800">
                 Sign in
