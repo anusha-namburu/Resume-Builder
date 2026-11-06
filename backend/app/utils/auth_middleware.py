@@ -42,3 +42,21 @@ def token_required(f):
 
         return f(current_user, *args, **kwargs)
     return decorated
+
+def optional_token(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        current_user = None
+        auth_header = request.headers.get('Authorization')
+        
+        if auth_header:
+            parts = auth_header.split()
+            token = parts[1] if len(parts) == 2 and parts[0].lower() == 'bearer' else parts[0]
+            try:
+                payload = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+                current_user = db.session.get(User, payload.get('user_id'))
+            except Exception:
+                current_user = None
+                
+        return f(current_user, *args, **kwargs)
+    return decorated

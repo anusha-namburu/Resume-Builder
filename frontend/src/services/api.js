@@ -26,7 +26,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear token if expired
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
@@ -49,6 +48,7 @@ export const resumeService = {
   update: (id, data) => api.put(`/resumes/${id}`, data),
   duplicate: (id) => api.post(`/resumes/${id}/duplicate`),
   delete: (id) => api.delete(`/resumes/${id}`),
+  importParsed: (data) => api.post('/resumes/import-parsed', data),
 };
 
 export const templateService = {
@@ -66,6 +66,11 @@ export const aiService = {
 export const atsService = {
   analyze: (payload) => api.post('/ats/analyze', payload),
   getHistory: (resumeId) => api.get(`/ats/history/${resumeId}`),
+  uploadAndScan: (formData) => api.post('/ats/upload-and-scan', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
 };
 
 export const pdfService = {
