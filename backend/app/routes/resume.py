@@ -459,3 +459,104 @@ def delete_resume(current_user, resume_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Failed to delete resume: {str(e)}'}), 500
+
+
+@resume_bp.route('/import-parsed', methods=['POST'])
+@token_required
+def import_parsed_resume(current_user):
+    data = request.get_json() or {}
+    parsed = data.get('parsed_resume', {})
+    template_id = data.get('template_id', 'modern-professional')
+    title = data.get('title', parsed.get('title', f"{current_user.name}'s Imported Resume")).strip()
+    target_role = data.get('target_role', parsed.get('target_role', current_user.headline or 'Software Professional')).strip()
+    personal = parsed.get('personal_info', {})
+
+    try:
+        new_resume = Resume(
+            user_id=current_user.id,
+            title=title,
+            template_id=template_id,
+            target_role=target_role,
+            color_theme='#2563eb',
+            font_family='Inter'
+        )
+        db.session.add(new_resume)
+        db.session.flush()
+
+        # Add Personal Info
+        personal_info = PersonalInformation(
+            resume_id=new_resume.id,
+            full_name=personal.get('full_name', current_user.name),
+            email=personal.get('email', current_user.email),
+            professional_title=personal.get('professional_title', target_role),
+            phone=personal.get('phone', ''),
+            location=personal.get('location', ''),
+            linkedin=personal.get('linkedin', ''),
+            github=personal.get('github', ''),
+            portfolio=personal.get('portfolio', ''),
+            summary=personal.get('summary', '')
+        )
+        db.session.add(personal_info)
+
+        # Add Educations
+        for i, edu_data in enumerate(parsed.get('educations', [])):
+            db.session.add(Education(
+                resume_id=new_resume.id,
+                degree=edu_data.get('degree', 'Degree / Coursework'),
+                institution=edu_data.get('institution', 'University / College'),
+                location=edu_data.get('location', ''),
+                start_year=edu_data.get('start_year', '2020'),
+                graduation_year=edu_data.get('graduation_year', '2024'),
+                score=edu_data.get('score', ''),
+                description=edu_data.get('description', ''),
+                sort_order=i
+            ))
+
+        # Add Experiences
+        for i, exp_data in enumerate(parsed.get('experiences', [])):
+            db.session.add(Experience(
+                resume_id=new_resume.id,
+                company=exp_data.get('company', 'Organization'),
+                job_title=exp_data.get('job_title', 'Professional'),
+                location=exp_data.get('location', ''),
+                start_date=exp_data.get('start_date', '2022'),
+                end_date=exp_data.get('end_date', 'Present'),
+                is_current=True,
+                responsibilities=exp_data.get('responsibilities', ''),
+                achievements=exp_data.get('achievements', ''),
+                sort_order=i
+            ))
+
+        # Add Projects
+        for i, proj_data in enumerate(parsed.get('projects', [])):
+            db.session.add(Project(
+                resume_id=new_resume.id,
+                title=proj_data.get('title', 'Project Portfolio'),
+                technologies=proj_data.get('technologies', ''),
+                description=proj_data.get('description', ''),
+                link=proj_data.get('link', ''),
+                sort_order=i
+            ))
+
+        # Add Skills
+        for i, s_data in enumerate(parsed.get('skills', [])):
+            db.session.add(Skill(
+                resume_id=new_resume.id,
+                name=s_data.get('name', 'Skill'),
+                level=s_data.get('level', 'Proficient'),
+                category=s_data.get('category', 'Technical'),
+                sort_order=i
+            ))
+
+        new_resume.calculate_completion()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Resume imported successfully',
+            'resume': new_resume.to_dict(full=True)
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Import failed: {str(e)}'}), 500

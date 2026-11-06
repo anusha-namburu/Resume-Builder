@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, FileText, Copy, Trash2, Edit3, Download, Sparkles, 
-  Clock, ShieldCheck, ArrowRight, Loader2, Check, AlertCircle 
+  Clock, ShieldCheck, ArrowRight, Loader2, Check, AlertCircle, UploadCloud 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { resumeService, pdfService } from '../services/api';
@@ -117,13 +117,22 @@ export const DashboardPage = () => {
             </p>
           </div>
 
-          <button
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Link
+              to="/ats"
+              className="px-4 py-3 rounded-xl font-bold text-xs bg-blue-700/60 hover:bg-blue-700 text-white border border-blue-400/30 transition-all shadow-md flex items-center gap-2"
+            >
+              <UploadCloud size={16} className="text-emerald-300" />
+              <span>Upload & Check ATS %</span>
+            </Link>
+            <button
             onClick={() => setShowCreateModal(true)}
             className="px-5 py-3 rounded-xl font-bold text-xs bg-white text-blue-900 hover:bg-blue-50 transition-all shadow-md flex items-center gap-2 group shrink-0"
           >
             <Plus size={16} className="text-blue-600 group-hover:rotate-90 transition-transform" />
             <span>Create New Resume</span>
           </button>
+          </div>
         </div>
 
         {/* Stats Row */}
